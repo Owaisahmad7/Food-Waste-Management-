@@ -213,4 +213,30 @@ ALTER TABLE claim_data
 MODIFY COLUMN Timestamp DATETIME;
 /*Describe the claim_data table after cleaning*/
 DESCRIBE claim_data;
+/*Export cleaned data to CSV files*/
+
+SELECT *
+INTO OUTFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/providers_cleaned.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+FROM providers;
+SELECT *
+INTO OUTFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\receivers_cleaned.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+FROM receivers_data;
+SELECT *
+INTO OUTFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\food_listing_cleaned.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+FROM food_listing_data;
+SELECT *
+INTO OUTFILE 'C:\\ProgramData\\MySQL\\MySQL Server 8.0\\Uploads\\claims_cleaned.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+FROM claim_data;
 
