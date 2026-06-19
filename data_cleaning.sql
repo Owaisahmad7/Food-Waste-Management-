@@ -239,4 +239,6 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 FROM claim_data;
-
+ALTER TABLE food_listing_data
+RENAME TO food_listings;
+SELECT * FROM food_listings;
