@@ -43,16 +43,32 @@ if menu == "Home":
     st.subheader("Problem Statement")
 
     st.write("""
-    Large quantities of food are wasted every day by restaurants,
-    supermarkets, and grocery stores while many people face food insecurity.
+    Large amounts of edible food are wasted every day by restaurants, supermarkets, and grocery stores
+    while many individuals and organizations continue to face food shortages.
     """)
 
     st.subheader("Solution")
 
-    st.write("""
+    st.write("""         
     This application connects food providers with receivers
     and helps monitor food donations using SQL analytics
     and interactive dashboards.
+    """)
+
+    st.markdown("---")
+
+    st.subheader("Recommendation")
+    
+    st.write("""
+    1-Prioritize High Contributing Providers 
+    Dashboard shows supermarkets contribute more food donations""")
+    st.write("""2-Improve Claim Completion Rate claim analysis shows
+    Completed 33.9 Pending 32.5 Cancelled 33.6""")
+    st.write("""3-Reduce Expired Food Waste""")
+    st.write("""4-Focus on HighDemand Food Items. Providers should prioritize
+    donating food categories that are claimed more frequently.""")
+    st.write("""5-Expand in High Activity Cities""")
+    st.write("""6-Track Provider Performance Create provider ranking and reward programs to encourage consistent food donations
     """)
 
     st.markdown("---")
@@ -133,7 +149,7 @@ elif menu == "View Food":
     st.subheader("View Food Listings")
 
     try:
-        query = "SELECT * FROM food_listings LIMIT 100"
+        query = "SELECT * FROM food_listings LIMIT 1500"
 
         cursor.execute(query)
 
@@ -155,39 +171,151 @@ elif menu == "Update Food":
 
     food_id = st.number_input("Enter Food ID", step=1)
 
-    new_quantity = st.number_input("New Quantity", step=1)
+    update_option = st.selectbox(
+        "What do you want to update?",
+        [
+            "Quantity",
+            "Expiry Date",
+            "Meal Type"
+        ]
+    )
 
-    if st.button("Update"):
+    # Update Quantity
+    if update_option == "Quantity":
 
-        query = """
-        UPDATE food_listings
-        SET Quantity = %s
-        WHERE Food_ID = %s
-        """
+        new_quantity = st.number_input(
+            "Enter New Quantity",
+            step=1
+        )
 
-        cursor.execute(query, (new_quantity, food_id))
+        if st.button("Update Quantity"):
 
-        conn.commit()
+            query = """
+            UPDATE food_listings
+            SET Quantity = %s
+            WHERE Food_ID = %s
+            """
 
-        st.success("Updated Successfully")
+            cursor.execute(
+                query,
+                (new_quantity, food_id)
+            )
+
+            conn.commit()
+
+            st.success("Quantity Updated Successfully")
+
+    # Update Expiry Date
+    elif update_option == "Expiry Date":
+
+        new_expiry = st.date_input(
+            "Select New Expiry Date"
+        )
+
+        if st.button("Update Expiry Date"):
+
+            query = """
+            UPDATE food_listings
+            SET Expiry_Date = %s
+            WHERE Food_ID = %s
+            """
+
+            cursor.execute(
+                query,
+                (new_expiry, food_id)
+            )
+
+            conn.commit()
+
+            st.success("Expiry Date Updated Successfully")
+
+    # Update Meal Type
+    elif update_option == "Meal Type":
+
+        new_meal = st.selectbox(
+            "Select New Meal Type",
+            [
+                "Breakfast",
+                "Lunch",
+                "Dinner",
+                "Snacks"
+            ]
+        )
+
+        if st.button("Update Meal Type"):
+
+            query = """
+            UPDATE food_listings
+            SET Meal_Type = %s
+            WHERE Food_ID = %s
+            """
+
+            cursor.execute(
+                query,
+                (new_meal, food_id)
+            )
+
+            conn.commit()
+
+            st.success("Meal Type Updated Successfully")
 elif menu == "Delete Food":
-
     st.subheader("Delete Food")
 
-    food_id = st.number_input("Enter Food ID", step=1)
+    # choose delete option
+    delete_option = st.selectbox(
+        "Choose Delete Option",
+        [
+            "Delete By Food ID",
+            "Delete Expired Food"
+        ]
+    )
 
-    if st.button("Delete"):
+    # OPTION 1
+    if delete_option == "Delete By Food ID":
+        food_id = st.number_input("Enter Food ID", step=1)
 
-        query = """
-        DELETE FROM food_listings
-        WHERE Food_ID = %s
-        """
+        if st.button("Delete Food"):
+            query = """
+            DELETE FROM food_listings
+            WHERE Food_ID = %s
+            """
 
-        cursor.execute(query, (food_id,))
+            cursor.execute(query, (food_id,))
+            conn.commit()
 
-        conn.commit()
+            st.success("Food Deleted Successfully")
 
-        st.success("Deleted Successfully")
+    # OPTION 2
+    elif delete_option == "Delete Expired Food":
+        cursor.execute("""
+        SELECT Food_ID, Food_Name, Expiry_Date
+        FROM food_listings
+        WHERE Expiry_Date < CURDATE()
+        """)
+
+        data = cursor.fetchall()
+
+        df = pd.DataFrame(
+            data,
+            columns=["Food ID", "Food Name", "Expiry Date"]
+        )
+
+        st.dataframe(df)
+
+        # count expired food
+        st.write("Total Expired Items:", len(df))
+
+        # delete button
+        if st.button("Delete Expired Food"):
+            query = """
+            DELETE FROM food_listings
+            WHERE Expiry_Date < CURDATE()
+            """
+
+            cursor.execute(query)
+            conn.commit()
+
+            st.success("Expired Food Deleted Successfully")        
 elif menu == "SQL Insights":
 
     st.subheader("SQL Business Insights")
@@ -422,54 +550,188 @@ elif menu == "SQL Insights":
         st.dataframe(df, use_container_width=True)
 elif menu == "Dashboard":
     st.subheader("Analytics Dashboard")
-        #KPI 1
-    cursor.execute("SELECT COUNT(*) FROM providers")
-    providers = cursor.fetchone()[0]
 
-    # KPI 2
-    cursor.execute("SELECT COUNT(*) FROM receivers_data")
-    receivers = cursor.fetchone()[0]
+# Provider Type filter
+    cursor.execute("SELECT DISTINCT Provider_Type FROM food_listings")
+    provider_list = [row[0] for row in cursor.fetchall()]
+    provider_list.insert(0, "All")
 
-    # KPI 3
-    cursor.execute("SELECT COUNT(*) FROM food_listings")
-    food_listings = cursor.fetchone()[0]
+    selected_provider = st.selectbox(
+    "Select Provider Type",
+    provider_list
+    )
 
-    # KPI 4
-    cursor.execute("SELECT COUNT(*) FROM claim_data")
-    claims = cursor.fetchone()[0]
+# Meal Type filter
+    cursor.execute("SELECT DISTINCT Meal_Type FROM food_listings")
+    meal_list = [row[0] for row in cursor.fetchall()]
+    meal_list.insert(0, "All")
 
-    col1, col2, col3, col4 = st.columns(4)
+    selected_meal = st.selectbox(
+    "Select Meal Type",
+    meal_list
+    )
+    # KPI - Total Food Listings after filter
 
-    with col1:
-        st.metric("Providers", providers)
-
-    with col2:
-        st.metric("Receivers", receivers)
-
-    with col3:
-        st.metric("Food Listings", food_listings)
-
-    with col4:
-        st.metric("Claims", claims)
-        query = """
-    SELECT Food_Type, COUNT(*) AS Count
+    query = """
+    SELECT COUNT(*)
     FROM food_listings
-    GROUP BY Food_Type
+    WHERE (%s = 'All' OR Provider_Type = %s)
+    AND (%s = 'All' OR Meal_Type = %s)
+    """
+
+    cursor.execute(query,(selected_provider,selected_provider,selected_meal,selected_meal))
+
+    food_count = cursor.fetchone()[0]
+
+
+    query = """
+    SELECT SUM(Quantity)
+    FROM food_listings
+    WHERE (%s = 'All' OR Provider_Type = %s)
+    AND (%s = 'All' OR Meal_Type = %s)
+    """
+
+    cursor.execute(query,(selected_provider,selected_provider,selected_meal,selected_meal))
+
+    total_quantity = cursor.fetchone()[0]
+    query = """
+    SELECT COUNT(DISTINCT Provider_ID)
+    FROM food_listings
+    WHERE (%s = 'All' OR Provider_Type = %s)
+    AND (%s = 'All' OR Meal_Type = %s)
+    """
+
+    cursor.execute(
+    query,
+    (
+        selected_provider,
+        selected_provider,
+        selected_meal,
+        selected_meal
+    ))
+
+    distinct_providers = cursor.fetchone()[0]
+    query = """
+    SELECT COUNT(DISTINCT Receiver_ID)
+    FROM claim_data
     """
 
     cursor.execute(query)
 
+    distinct_receivers = cursor.fetchone()[0]
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Food Listings", food_count)
+
+    with col2:
+        st.metric("Total Quantity", total_quantity)
+    with col3:
+        st.metric("Unique Provider", distinct_providers)
+    with col4:
+        st.metric("Unique Receivers", distinct_receivers)  
+
+    query = """
+    SELECT Food_Type, COUNT(*) AS Total
+    FROM food_listings
+    WHERE (%s='All' OR Provider_Type=%s)
+    AND (%s='All' OR Meal_Type=%s)
+    GROUP BY Food_Type
+    """
+
+    cursor.execute(
+    query,
+    (
+        selected_provider,
+        selected_provider,
+        selected_meal,
+        selected_meal
+    )
+    )
+
     data = cursor.fetchall()
 
     df = pd.DataFrame(
-        data,
-        columns=["Food Type", "Count"]
+    data,
+    columns=["Food Type", "Total"]
     )
 
     st.subheader("Food Type Distribution")
 
     st.bar_chart(
-        df.set_index("Food Type")
+    df.set_index("Food Type")
+    )
+    query = """
+    SELECT Meal_Type, COUNT(*) AS Total
+    FROM food_listings
+    WHERE (%s='All' OR Provider_Type=%s)
+    AND (%s='All' OR Meal_Type=%s)
+    GROUP BY Meal_Type
+    """
+
+    cursor.execute(
+    query,
+    (
+        selected_provider,
+        selected_provider,
+        selected_meal,
+        selected_meal
+    )
+    )
+
+    data = cursor.fetchall()
+
+    df = pd.DataFrame(
+    data,
+    columns=["Meal Type", "Total"]
+    )
+
+    fig, ax = plt.subplots()
+
+    ax.pie(
+    df["Total"],
+    labels=df["Meal Type"],
+    autopct="%1.1f%%"
+    )
+
+    st.subheader("Meal Type Distribution")
+
+    st.pyplot(fig)
+    query = """
+    SELECT 
+    Provider_ID,
+    SUM(Quantity) AS Total
+    FROM food_listings
+
+    WHERE (%s='All' OR Provider_Type=%s)
+    AND (%s='All' OR Meal_Type=%s)
+
+    GROUP BY Provider_ID
+    ORDER BY Total DESC
+    LIMIT 10
+    """
+
+    cursor.execute(
+    query,
+    (
+        selected_provider,
+        selected_provider,
+        selected_meal,
+        selected_meal
+    )
+    )
+
+    data = cursor.fetchall()
+
+    df = pd.DataFrame(
+    data,
+    columns=["Provider ID", "Quantity"]
+    )
+
+    st.subheader("Top 10 Food Donors")
+
+    st.bar_chart(
+    df.set_index("Provider ID")
     )
     query = """
     SELECT Status, COUNT(*) AS Total
@@ -482,70 +744,18 @@ elif menu == "Dashboard":
     data = cursor.fetchall()
 
     df = pd.DataFrame(
-        data,
-        columns=["Status", "Total"]
+    data,
+    columns=["Status", "Total"]
+    )
+
+    fig, ax = plt.subplots()
+
+    ax.pie(
+    df["Total"],
+    labels=df["Status"],
+    autopct="%1.1f%%"
     )
 
     st.subheader("Claim Status Distribution")
 
-    st.bar_chart(
-        df.set_index("Status")
-    )   
-    query = """
-    SELECT Type, COUNT(*) AS Total
-    FROM providers
-    GROUP BY Type
-    """
-
-    cursor.execute(query)
-
-    data = cursor.fetchall()
-
-    df = pd.DataFrame(
-        data,
-        columns=["Provider Type", "Total"]
-    )
-
-    st.subheader("Provider Type Contribution")
-    fig, ax = plt.subplots()
-
-    colors = ["red", "blue", "green", "orange"]
-
-    ax.bar(
-    df["Provider Type"],
-    df["Total"],
-    color=colors
-    )
-
-    ax.set_title("Provider Type Contribution")
-    ax.set_xlabel("Provider Type")
-    ax.set_ylabel("Total Providers")
-
     st.pyplot(fig)
-   
-    query = """
-    SELECT 
-        p.Name,
-        SUM(f.Quantity) AS total_food
-    FROM providers p
-    JOIN food_listings f
-        ON p.Provider_ID = f.Provider_ID
-    GROUP BY p.Name
-    ORDER BY total_food DESC
-    LIMIT 10
-    """
-
-    cursor.execute(query)
-
-    data = cursor.fetchall()
-
-    df = pd.DataFrame(
-        data,
-        columns=["Provider", "Quantity"]
-    )
-
-    st.subheader("Top 10 Food Donors")
-
-    st.bar_chart(
-        df.set_index("Provider")
-    ) 

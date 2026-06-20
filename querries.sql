@@ -183,22 +183,5 @@ JOIN food_listing_data f
     ON p.Provider_ID = f.Provider_ID
 GROUP BY p.Name
 ORDER BY total_food_donated DESC;
-  if insight == "Provider Type Contribution":
-        query = """SELECT Type, COUNT(*) AS Total_Donations
-        FROM providers
-        GROUP BY Type
-        ORDER BY Total_Donations DESC
-        """
 
-        cursor.execute(query)
 
-        data = cursor.fetchall()
-
-        df = pd.DataFrame(
-        data,
-        columns=["Provider Type", "Total Donations"]
-        )
-
-        st.dataframe(df)
-
-        st.info("Supermarkets contribute the highest food donations")
