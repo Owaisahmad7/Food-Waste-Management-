@@ -1,13 +1,21 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
 import matplotlib.pyplot as plt
+import os
+import mysql.connector
+
+os.environ["DB_HOST"] = "reseau.proxy.rlwy.net"
+os.environ["DB_USER"] = "root"
+os.environ["DB_PASSWORD"] = "jUtlXgOZAWlUhZdOmEcMtlxoXnihBcFL"
+os.environ["DB_NAME"] = "food_waste_management"
+os.environ["DB_PORT"] = "15685"
 
 conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="Starzone12@",
-    database="food_waste_management"
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_NAME"),
+    port=int(os.getenv("DB_PORT"))
 )
 
 if conn.is_connected():
